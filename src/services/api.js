@@ -69,7 +69,7 @@ export const employeeAPI = {
   },
 
   updateStatus: async (id, isActive) => {
-    const response = await fetch(`${API_URL}/employees/${id}/status`, {
+    const response = await fetch(`${API_URL}/status?id=${id}`, {
       method: 'PATCH',
       headers: getAuthHeader(),
       body: JSON.stringify({ isActive }),
@@ -78,7 +78,7 @@ export const employeeAPI = {
   },
 
   markComplete: async (id, type) => {
-    const response = await fetch(`${API_URL}/employees/${id}/complete/${type}`, {
+    const response = await fetch(`${API_URL}/complete?id=${id}&type=${type}`, {
       method: 'POST',
       headers: getAuthHeader(),
     });
@@ -88,7 +88,7 @@ export const employeeAPI = {
 
 export const historyAPI = {
   get: async (type) => {
-    const response = await fetch(`${API_URL}/history/${type}`, {
+    const response = await fetch(`${API_URL}/history?type=${type}`, {
       headers: getAuthHeader(),
     });
     return response.json();
@@ -96,7 +96,7 @@ export const historyAPI = {
 
   exportCSV: async (type) => {
     const token = localStorage.getItem('auth_token');
-    const response = await fetch(`${API_URL}/export/csv/${type}`, {
+    const response = await fetch(`${API_URL}/export?type=${type}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       },

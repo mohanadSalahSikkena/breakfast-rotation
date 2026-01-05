@@ -176,6 +176,84 @@ app.get('/api/export/csv/:type', authenticateToken, (req, res) => {
   res.send(csv);
 });
 
+// Flattened routes for Vercel compatibility (also work locally)
+app.post('/api/complete', authenticateToken, (req, res) => {
+  const { id, type } = req.query;
+  const now = Date.now();
+
+  const employeeStmt = db.prepare('SELECT name FROM employees WHERE id = ?');
+  const employee = employeeStmt.get(id);
+
+  if (!employee) {
+    return res.status(404).json({ error: 'Employee not found' });
+  }
+
+  if (type === 'breakfast') {
+    const updateStmt = db.prepare(`
+      UPDATE employees
+      SET breakfast_last_turn_date = ?, breakfast_turn_count = breakfast_turn_count + 1
+      WHERE id = ?
+    `);
+    updateStmt.run(now, id);
+
+    const historyStmt = db.prepare(`
+      INSERT INTO breakfast_history (employee_id, employee_name, date)
+      VALUES (?, ?, ?)
+    `);
+    historyStmt.run(id, employee.name, now);
+  } else if (type === 'orders') {
+    const updateStmt = db.prepare(`
+      UPDATE employees
+      SET orders_last_turn_date = ?, orders_turn_count = orders_turn_count + 1
+      WHERE id = ?
+    `);
+    updateStmt.run(now, id);
+
+    const historyStmt = db.prepare(`
+      INSERT INTO orders_history (employee_id, employee_name, date)
+      VALUES (?, ?, ?)
+    `);
+    historyStmt.run(id, employee.name, now);
+  }
+
+  res.json({ success: true });
+});
+
+app.patch('/api/status', authenticateToken, (req, res) => {
+  const { id } = req.query;
+  const { isActive } = req.body;
+  const stmt = db.prepare('UPDATE employees SET is_active = ? WHERE id = ?');
+  stmt.run(isActive ? 1 : 0, id);
+  res.json({ success: true });
+});
+
+app.get('/api/history', authenticateToken, (req, res) => {
+  const { type } = req.query;
+  const table = type === 'breakfast' ? 'breakfast_history' : 'orders_history';
+
+  const stmt = db.prepare(`SELECT * FROM ${table} ORDER BY date DESC`);
+  const history = stmt.all();
+  res.json(history);
+});
+
+app.get('/api/export', authenticateToken, (req, res) => {
+  const { type } = req.query;
+  const table = type === 'breakfast' ? 'breakfast_history' : 'orders_history';
+
+  const stmt = db.prepare(`SELECT * FROM ${table} ORDER BY date DESC`);
+  const history = stmt.all();
+
+  let csv = 'ID,Employee ID,Employee Name,Date\n';
+  history.forEach(item => {
+    const date = new Date(item.date).toISOString();
+    csv += `${item.id},${item.employee_id},"${item.employee_name}",${date}\n`;
+  });
+
+  res.header('Content-Type', 'text/csv');
+  res.header('Content-Disposition', `attachment; filename="${type}-history.csv"`);
+  res.send(csv);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
