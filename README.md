@@ -1,93 +1,166 @@
-# 🏢 Office Duty Tracker
+# Office Duty Tracker
 
-A React app that manages multiple office duty rotations (Breakfast & Orders Collection) with independent, fair queue-based systems.
+A simple web application to track employee breakfast and orders collection duties with fair rotation based on turn counts.
 
 ## Features
 
-- 👤 **Employee Management**: Add, edit, delete, and pause employees
-- 🔄 **Dual Rotation Systems**:
-  - 🍳 **Breakfast Duty** - Track who buys breakfast
-  - 📦 **Orders Collection** - Track who collects office orders
-- 🎯 **Independent Turn Tracking**: Each rotation maintains separate turn counts
-- 📊 **Rotation Queue**: See the complete order of upcoming turns
-- 📅 **Dual History Views**:
-  - 📋 **List View** - Chronological list of all events
-  - 🗓️ **Calendar View** - Monthly calendar showing events by date with navigation
-- ⚖️ **Fair Catch-Up System**: Paused employees get extra turns when reactivated to equalize turn counts
-- 💾 **Persistent Storage**: All data stored in browser localStorage
+- 🔐 Admin authentication with JWT
+- 👥 Employee management (add, edit, delete, pause/activate)
+- 🔄 Dual rotation system (Breakfast & Orders)
+- ⚖️ Fair rotation based on turn counts
+- 📅 Calendar and list views for history
+- 📊 CSV export functionality
+- 📱 Responsive design
 
-## How It Works
+## Quick Start - Local Development
 
-1. **Add employees** to the system
-2. The app **automatically selects** the next employee based on:
-   - **Primary**: Fewest turn count (ensures fairness)
-   - **Secondary**: Longest time since last turn
-3. Click **"Breakfast Bought"** or **"Orders Collected"** when duty is completed
-4. The turn count updates and **moves to the next** employee automatically
-5. **Pause employees** who are on vacation or working remotely
-6. When reactivated, they'll get **extra turns** until their count catches up with others
+### Prerequisites
 
-## Getting Started
+- Node.js 18+ installed
+- npm or yarn
 
-### Install Dependencies
+### Setup
 
-```bash
-npm install
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd <project-folder>
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   cd server && npm install && cd ..
+   ```
+
+3. Create environment files:
+   ```bash
+   cp .env.example .env
+   cp server/.env.example server/.env
+   ```
+
+4. Start the backend server:
+   ```bash
+   cd server
+   npm start
+   ```
+
+5. In a new terminal, start the frontend:
+   ```bash
+   npm run dev
+   ```
+
+6. Open your browser to http://localhost:5173
+
+7. Login with default credentials:
+   - **Username**: admin
+   - **Password**: admin123
+
+## Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone)
+
+For detailed deployment instructions, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
+
+### Quick Deploy Steps
+
+1. Push your code to GitHub
+2. Import the repository in Vercel
+3. Set environment variables:
+   - `JWT_SECRET` - Your secure JWT secret
+   - `ADMIN_USERNAME` - Admin username
+   - `ADMIN_PASSWORD` - Admin password
+4. Deploy!
+
+## Project Structure
+
+```
+.
+├── api/                    # Serverless API functions (for Vercel)
+│   ├── _auth.js           # Authentication middleware
+│   ├── _db.js             # Database operations
+│   ├── _init.js           # Admin initialization
+│   ├── auth/              # Auth endpoints
+│   ├── employees/         # Employee endpoints
+│   ├── history/           # History endpoints
+│   └── export/            # CSV export endpoints
+├── server/                 # Express backend (for local development)
+│   ├── db.js              # Database module
+│   ├── server.js          # Express server
+│   └── .env               # Backend environment variables
+├── src/                    # React frontend
+│   ├── components/        # React components
+│   ├── services/          # API service layer
+│   ├── App.jsx            # Main app component
+│   └── index.css          # Styles
+├── vercel.json            # Vercel configuration
+└── package.json           # Project dependencies
 ```
 
-### Run Development Server
+## Technology Stack
 
-```bash
-npm run dev
-```
+**Frontend:**
+- React 18
+- Vite
+- Vanilla CSS
 
-The app will open at `http://localhost:5173`
+**Backend:**
+- Express.js (local development)
+- Vercel Serverless Functions (production)
+- JWT for authentication
+- bcryptjs for password hashing
+- JSON file-based storage
 
-### Build for Production
+## API Endpoints
 
-```bash
-npm run build
-```
+### Authentication
+- `POST /api/auth/login` - Admin login
+- `POST /api/auth/verify` - Verify JWT token
 
-## Tech Stack
+### Employees
+- `GET /api/employees` - Get all employees
+- `POST /api/employees` - Create employee
+- `PUT /api/employees/:id` - Update employee
+- `DELETE /api/employees/:id` - Delete employee
+- `PATCH /api/employees/:id/status` - Update employee status
+- `POST /api/employees/:id/complete/:type` - Mark duty complete
 
-- **React 18** - UI framework
-- **Vite** - Build tool
-- **SQL.js** - SQLite database in the browser
-- **LocalStorage** - Persistent data storage
+### History
+- `GET /api/history/:type` - Get history (breakfast or orders)
+- `GET /api/export/csv/:type` - Export history as CSV
 
-## Database Schema
+## Environment Variables
 
-### Employees Table
-- `id` - Primary key
-- `name` - Employee name
-- `lastTurnDate` - Last time they bought breakfast
-- `isActive` - Whether they're currently in rotation
-- `turnCount` - Total number of turns
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `JWT_SECRET` | Secret key for JWT tokens | Yes |
+| `ADMIN_USERNAME` | Admin username | Yes |
+| `ADMIN_PASSWORD` | Admin password | Yes |
+| `VITE_API_URL` | API URL override (optional) | No |
 
-### History Table
-- `id` - Primary key
-- `employeeId` - Reference to employee
-- `employeeName` - Snapshot of employee name
-- `date` - When breakfast was bought
+## Security Notes
 
-## Rotation Logic
+- Never commit `.env` files
+- Change default admin credentials immediately
+- Use strong, random `JWT_SECRET` in production
+- All API endpoints except login are protected with JWT authentication
 
-The rotation system works by:
-1. Filtering for **active employees only**
-2. Sorting by `lastTurnDate` (oldest first)
-3. Employees who **never went** get priority
-4. When marked complete, the date updates and they go to the back of the queue
+## Important: Production Database
 
-## Future Enhancements
+⚠️ **The current implementation uses JSON file storage which is ephemeral on Vercel.** For production use, migrate to a persistent database solution like:
 
-- 🔔 Push notifications for assigned employees
-- 📊 Statistics dashboard (most frequent buyer, longest streak)
-- 🌙 Dark mode
-- 📱 PWA support for mobile installation
-- ☁️ Cloud sync with Firebase for team usage
-- 🔐 User authentication for team management
+- Vercel Postgres
+- Vercel KV
+- MongoDB Atlas
+- Supabase
+- PlanetScale
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for more details.
 
 ## License
 
 MIT
+
+## Support
+
+For deployment issues, see [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
